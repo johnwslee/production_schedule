@@ -1,6 +1,5 @@
 import pandas as pd
 import datetime
-import calendar
 import holidays
 
 PROCESS_NAMES = ["사출", "경화", "냉각", "탈형/조립", "건조", "외주가공", "마무리 작업"]
