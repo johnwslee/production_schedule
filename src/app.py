@@ -1,5 +1,6 @@
 from dash import Dash, html, dcc, Input, Output
 import dash_bootstrap_components as dbc
+import plotly.express as px
 import datetime
 from production import check_if_working_day, calculate_production_time
 
@@ -7,7 +8,7 @@ from production import check_if_working_day, calculate_production_time
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
-PROCESS_NAMES = ["사출", "경화", "냉각", "탈형/조립", "건조", "외주가공", "마무리(그라인딩, 차폐몰딩 등, 세척/포장)"]
+PROCESS_NAMES = ["사출", "경화", "냉각", "탈형/조립", "건조", "외주가공", "마무리 작업"]
 
 app.layout = dbc.Container(
     [
@@ -29,7 +30,7 @@ app.layout = dbc.Container(
                                         html.Br(),
                                         html.Br(),
                                         html.H6('필요 개수 [개]'),
-                                        dcc.Input(id='num_joints', type='number', value="1"),
+                                        dcc.Input(id='num_joints', type='number', value=1),
                                         html.Br(),
                                         html.Br(),
                                         html.H6('작업 시작 일 (예시: 2022-08-01)'),
@@ -142,11 +143,9 @@ app.layout = dbc.Container(
                 ),
                 dbc.Col(
                     [
-                        html.Br(),
-                        html.Br(),
                         html.Iframe(
                             id='production_schedule_plot',
-                            style={'border-width': '0', 'width': '100%', 'height': '100%'}
+                            style={'border-width': '0', 'width': 1100, 'height': 1600}
                             ),
                         html.H6('Note: 커서를 그래프에 대면 상세 일정 조회가 가능합니다.', style={'textAlign': 'center'}),
                     ],
@@ -163,6 +162,8 @@ app.layout = dbc.Container(
     Input('product_name', 'value'),
     Input('num_joints', 'value'),
     Input('start_time', 'value'),
+    Input('working_time_min', 'value'),
+    Input('working_time_max', 'value'),
     Input('injection_time', 'value'),
     Input('curing_time', 'value'),
     Input('cooling_time', 'value'),
@@ -171,15 +172,34 @@ app.layout = dbc.Container(
     Input('drying_time', 'value'),
     Input('outsourcing_time', 'value'),
     Input('final_touch_time', 'value'),
-    Input('working_time_min', 'value'),
-    Input('working_time_max', 'value'),
+    Input('work_on_saturday', 'value'),
+    Input('work_on_sunday', 'value'),
+    Input('work_on_holiday', 'value'),
+    Input('three_day_shift', 'value'),
+
 )
 def show_schedule(
-    product_name, num_joints, start_time, injection_time, curing_time, cooling_time,
-    mold_reset_time, mold_preheating_time, drying_time, outsourcing_time,
-    final_touch_time, working_time_min, working_time_max
+    product_name, num_joints, start_time, working_time_min, working_time_max,
+    injection_time, curing_time, cooling_time, mold_reset_time, mold_preheating_time, 
+    drying_time, outsourcing_time, final_touch_time, work_on_saturday, work_on_sunday,
+    work_on_holiday, three_day_shift
 ):
-    
+    df = calculate_production_time(
+        num_joints, start_time, injection_time, curing_time, cooling_time, mold_reset_time,
+        mold_preheating_time, drying_time, outsourcing_time, final_touch_time,
+        working_time_min, working_time_max,
+        work_on_saturday=work_on_saturday, work_on_sunday=work_on_sunday, 
+        work_on_holiday=work_on_holiday, three_day_shift=three_day_shift,
+    )
+    fig = px.timeline(df, x_start="Start", x_end="Finish", y="Process", color="Number")
+    fig.update_yaxes(autorange="reversed", title="공정 순서", title_font_size=20)
+    fig.update_xaxes(title="시간", title_font_size=20, dtick="d1")
+    fig.update_layout(autosize=False, height=1500, width=1000, 
+                    title=f"{product_name} 제조 계획", title_font_size=30, title_x=0.5,
+                    showlegend=False)
+    output = fig.to_html()
+
+    return output
 
 if __name__ == '__main__':
     app.run_server(debug=True)

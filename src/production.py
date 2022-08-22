@@ -3,7 +3,7 @@ import datetime
 import calendar
 import holidays
 
-PROCESS_NAMES = ["사출", "경화", "냉각", "탈형/조립", "건조", "외주가공", "마무리(그라인딩, 차폐몰딩 등, 세척/포장)"]
+PROCESS_NAMES = ["사출", "경화", "냉각", "탈형/조립", "건조", "외주가공", "마무리 작업"]
 
 def check_if_working_day(date_time, working_time_min, working_time_max,
                          work_on_saturday=False, work_on_sunday=False,
@@ -151,7 +151,15 @@ def calculate_production_time(
     
     num_joint = 0
     
-    time = start_time
+    time = datetime.datetime.strptime(start_time, '%Y-%m-%d')
+    injection_time = datetime.timedelta(hours=injection_time)             # 사출 소요 시간
+    curing_time = datetime.timedelta(hours=curing_time)               # 경화 소요 시간 
+    cooling_time = datetime.timedelta(hours=cooling_time)              # 냉각 소요 시간
+    mold_reset_time = datetime.timedelta(hours=mold_reset_time)            # 금형 탈형 및 조립 소요 시간
+    mold_preheating_time = datetime.timedelta(hours=mold_preheating_time)       # 금형 예열 소요 시간
+    drying_time = datetime.timedelta(days=drying_time)                # 접속재 건조 소요 시간
+    outsourcing_time = datetime.timedelta(days=outsourcing_time)            # 외주 가공 소요 시간
+    final_touch_time = datetime.timedelta(days=final_touch_time)
     
     while num_joint < num_joints:
         if check_if_working_day(
