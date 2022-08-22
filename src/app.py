@@ -2,7 +2,7 @@ from dash import Dash, html, dcc, Input, Output
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import datetime
-from production import check_if_working_day, calculate_production_time
+from .production import check_if_working_day, calculate_production_time
 
 # Setup app and layout/frontend
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
